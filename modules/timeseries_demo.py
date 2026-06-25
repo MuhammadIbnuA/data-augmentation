@@ -190,51 +190,18 @@ def show_timeseries_demo_page():
     plt.colorbar(im, ax=ax)
     st.pyplot(fig)
     
-    # Show time and frequency masking
-    col1, col2 = st.columns(2)
+    # Add definitions for each augmentation technique
+    st.subheader("Definisi Teknik Augmentation")
     
-    with col1:
-        st.write("**Time Masking**")
-        # Apply time masking
-        masked_spectrogram = spectrogram.copy()
-        time_mask_len = 30
-        time_mask_start = np.random.randint(0, spectrogram.shape[1] - time_mask_len)
-        masked_spectrogram[:, time_mask_start:time_mask_start+time_mask_len] = 0
-        
-        fig, ax = plt.subplots(figsize=(10, 4))
-        im = ax.imshow(masked_spectrogram, aspect='auto', origin='lower',
-                       extent=[times.min(), times.max(), freqs.min(), freqs.max()])
-        ax.set_title('Spectrogram with Time Masking')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Frequency')
-        plt.colorbar(im, ax=ax)
-        st.pyplot(fig)
-    
-    with col2:
-        st.write("**Frequency Masking**")
-        # Apply frequency masking
-        masked_spectrogram_freq = spectrogram.copy()
-        freq_mask_len = 15
-        freq_mask_start = np.random.randint(0, spectrogram.shape[0] - freq_mask_len)
-        masked_spectrogram_freq[freq_mask_start:freq_mask_start+freq_mask_len, :] = 0
-        
-        fig, ax = plt.subplots(figsize=(10, 4))
-        im = ax.imshow(masked_spectrogram_freq, aspect='auto', origin='lower',
-                       extent=[times.min(), times.max(), freqs.min(), freqs.max()])
-        ax.set_title('Spectrogram with Frequency Masking')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Frequency')
-        plt.colorbar(im, ax=ax)
-        st.pyplot(fig)
+    st.write("**Jittering:** Menambahkan noise kecil ke sinyal. Membantu model menjadi lebih robust terhadap noise dan variansi kecil dalam data.")
+    st.write("**Scaling:** Mengalikan nilai sinyal dengan faktor tertentu. Membantu model beradaptasi dengan variasi amplitudo.")
+    st.write("**Cropping:** Mengambil sebagian window dari sinyal. Membantu model belajar fitur yang lokal dan invariant terhadap posisi.")
+    st.write("**Time Warping:** Mensimulasikan perubahan skala waktu. Membantu model beradaptasi dengan kecepatan yang berbeda dalam data temporal.")
     
     st.info("""
-    **Pada audio**, augmentation sering diterapkan pada spektrogram menggunakan time masking dan frequency masking.
-    Ini membantu model menjadi lebih robust terhadap gangguan temporal dan frekuensi.
+    **Pada audio dan time-series**, augmentation membantu model menjadi lebih robust terhadap variasi temporal dan amplitudo.
+    Teknik-teknik ini membuat model lebih generalizable pada data dunia nyata yang bervariasi.
     """)
-    
-    st.write("")
-    st.write("**Time Masking:** Menyembunyikan sebagian frame waktu secara acak")
-    st.write("**Frequency Masking:** Menyembunyikan sebagian frekuensi secara acak")
     
     st.markdown("---")
     st.subheader("Konsep Penting")

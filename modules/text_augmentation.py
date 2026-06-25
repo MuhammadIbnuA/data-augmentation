@@ -4,15 +4,18 @@ import re
 
 # Simple synonym dictionary
 SYNONYMS = {
+    "pemanfaatan": ["penggunaan", "implementasi", "aplikasi"],
+    "teknologi": ["teknologi", "ilmu pengetahuan", "inovasi digital"],
+    "dalam": ["pada", "di", "mengenai"],
+    "pendidikan": ["edukasi", "pengajaran", "pelatihan"],
+    "sangat": ["amat", "sekali", "benar-benar"],
     "membantu": ["menolong", "memudahkan", "mendukung"],
-    "mahasiswa": ["pelajar", "peserta didik", "student"],
-    "memahami": ["mengerti", "mempelajari", "menangkap"],
+    "proses": ["mekanisme", "langkah", "tahapan"],
+    "pembelajaran": ["pengajaran", "edukasi", "pelatihan"],
+    "mahasiswa": ["pelajar", "peserta didik", "akademisi"],
     "cepat": ["singkat", "segera", "kilat"],
     "baik": ["bagus", "optimal", "hebat"],
-    "sangat": ["amat", "sekali", "benar-benar"],
-    "aplikasi": ["program", "software", "aplikasi"],
     "ini": ["itu", "berikut", "tersebut"],
-    "dalam": ["pada", "di", "mengenai"],
     "deep": ["pembelajaran", "mendalam", "profund"],
     "learning": ["pembelajaran", "pengkajian", "study"],
     "konsep": ["ide", "gagasan", "prinsip"],
@@ -99,10 +102,10 @@ def random_insertion(text, n=1):
 def paraphrase_text(text):
     """Simple paraphrasing using templates"""
     templates = [
-        "Teknik {data} augmentation {sangat} {membantu} {mahasiswa} dalam {memahami} {deep} {learning}.",
-        "{mahasiswa} {memahami} {deep} {learning} lebih {baik} dengan {data} augmentation.",
-        "Augmentasi {data} {sangat} {membantu} {mahasiswa} {memahami} konsep {deep} {learning}.",
-        "Teknik {data} augmentation {membantu} {mahasiswa} {memahami} {deep} {learning} secara {cepat}."
+        "Pemanfaatan {teknologi} dalam {pendidikan} {sangat} {membantu} {mahasiswa} dalam {pembelajaran}.",
+        "{mahasiswa} {membantu} dalam {pembelajaran} lebih {baik} dengan pemanfaatan {teknologi} dalam {pendidikan}.",
+        "Penggunaan {teknologi} dalam {pendidikan} {sangat} {membantu} {mahasiswa} dalam {pembelajaran}.",
+        "Teknik pemanfaatan {teknologi} dalam {pendidikan} {membantu} {mahasiswa} dalam {pembelajaran} secara {cepat}."
     ]
     
     # Fill template with words from the original text
@@ -123,7 +126,7 @@ def show_text_augmentation_page():
     st.write("Simulasi teknik augmentation pada teks - hati-hati karena perubahan kata dapat mengubah makna")
     
     # Text input
-    default_text = "Aplikasi ini sangat membantu mahasiswa dalam memahami deep learning."
+    default_text = "Pemanfaatan teknologi dalam pendidikan sangat membantu proses pembelajaran mahasiswa."
     user_input = st.text_area(
         "Masukkan kalimat Anda",
         value=default_text,
