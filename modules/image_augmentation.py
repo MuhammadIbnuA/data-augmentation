@@ -1,65 +1,129 @@
 import streamlit as st
-import cv2
 import numpy as np
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageOps
 import matplotlib.pyplot as plt
 import os
 
+# Try to import cv2, but handle gracefully if not available
+CV2_AVAILABLE = False
+try:
+    import cv2
+    # Test if cv2 is working properly
+    test_version = cv2.__version__
+    CV2_AVAILABLE = True
+except (ImportError, OSError):
+    # Handle both ImportError and OSError (missing system libraries)
+    pass
+
 def apply_augmentation(image, technique, params):
     """Apply selected augmentation technique to the image"""
-    img_array = np.array(image)
-    
     if technique == "Horizontal Flip":
-        return cv2.flip(img_array, 1)
+        if CV2_AVAILABLE:
+            img_array = np.array(image)
+            flipped = cv2.flip(img_array, 1)
+            return Image.fromarray(flipped)
+        else:
+            # Use PIL for flipping
+            return image.transpose(Image.FLIP_LEFT_RIGHT)
     elif technique == "Rotation":
         angle = params.get('rotation_angle', 0)
-        center = (img_array.shape[1] // 2, img_array.shape[0] // 2)
-        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-        return cv2.warpAffine(img_array, rotation_matrix, (img_array.shape[1], img_array.shape[0]))
+        if CV2_AVAILABLE:
+            img_array = np.array(image)
+            center = (img_array.shape[1] // 2, img_array.shape[0] // 2)
+            rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+            rotated = cv2.warpAffine(img_array, rotation_matrix, (img_array.shape[1], img_array.shape[0]))
+            return Image.fromarray(rotated)
+        else:
+            # Use PIL for rotation
+            return image.rotate(-angle, expand=False, fillcolor='black')
     elif technique == "Crop":
-        height, width = img_array.shape[:2]
+        width, height = image.size
         crop_percent = params.get('crop_percent', 0.8)
-        crop_h = int(height * crop_percent)
         crop_w = int(width * crop_percent)
-        start_y = (height - crop_h) // 2
+        crop_h = int(height * crop_percent)
         start_x = (width - crop_w) // 2
-        return img_array[start_y:start_y+crop_h, start_x:start_x+crop_w]
+        start_y = (height - crop_h) // 2
+        return image.crop((start_x, start_y, start_x + crop_w, start_y + crop_h))
     elif technique == "Zoom":
         scale_factor = params.get('zoom_factor', 1.0)
-        height, width = img_array.shape[:2]
-        new_height, new_width = int(height * scale_factor), int(width * scale_factor)
+        width, height = image.size
+        new_width, new_height = int(width * scale_factor), int(height * scale_factor)
         
         # Resize the image
-        zoomed_img = cv2.resize(img_array, (new_width, new_height))
+        zoomed_img = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
         
-        # Center crop to original size
-        start_y = (new_height - height) // 2
-        start_x = (new_width - width) // 2
-        return zoomed_img[start_y:start_y+height, start_x:start_x+width]
+        # Center crop to original size if zoomed in
+        if new_width > width or new_height > height:
+            start_x = (new_width - width) // 2
+            start_y = (new_height - height) // 2
+            zoomed_img = zoomed_img.crop((start_x, start_y, start_x + width, start_y + height))
+        else:
+            # If zoomed out, center the smaller image in original size
+            new_img = Image.new('RGB', (width, height), color='black')
+            paste_x = (width - new_width) // 2
+            paste_y = (height - new_height) // 2
+            new_img.paste(zoomed_img, (paste_x, paste_y))
+            zoomed_img = new_img
+            
+        return zoomed_img
     elif technique == "Brightness":
         factor = params.get('brightness_factor', 1.0)
-        hsv = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
-        hsv[:, :, 2] = np.clip(hsv[:, :, 2] * factor, 0, 255)
-        return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+        if CV2_AVAILABLE:
+            img_array = np.array(image)
+            hsv = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
+            hsv[:, :, 2] = np.clip(hsv[:, :, 2] * factor, 0, 255)
+            adjusted = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+            return Image.fromarray(adjusted)
+        else:
+            # Use PIL for brightness adjustment
+            enhancer = ImageEnhance.Brightness(image)
+            return enhancer.enhance(factor)
     elif technique == "Contrast":
         factor = params.get('contrast_factor', 1.0)
-        img_array = img_array.astype(np.float64)
-        mean = np.mean(img_array, axis=(0, 1), keepdims=True)
-        adjusted = (img_array - mean) * factor + mean
-        return np.clip(adjusted, 0, 255).astype(np.uint8)
+        if CV2_AVAILABLE:
+            img_array = np.array(image).astype(np.float64)
+            mean = np.mean(img_array, axis=(0, 1), keepdims=True)
+            adjusted = (img_array - mean) * factor + mean
+            adjusted = np.clip(adjusted, 0, 255).astype(np.uint8)
+            return Image.fromarray(adjusted)
+        else:
+            # Use PIL for contrast adjustment
+            enhancer = ImageEnhance.Contrast(image)
+            return enhancer.enhance(factor)
     elif technique == "Blur":
-        kernel_size = int(params.get('blur_kernel', 1))
-        if kernel_size % 2 == 0:
-            kernel_size += 1  # Ensure odd kernel size
-        kernel_size = max(1, kernel_size)
-        return cv2.GaussianBlur(img_array, (kernel_size, kernel_size), 0)
+        if CV2_AVAILABLE:
+            img_array = np.array(image)
+            kernel_size = int(params.get('blur_kernel', 1))
+            if kernel_size % 2 == 0:
+                kernel_size += 1  # Ensure odd kernel size
+            kernel_size = max(1, kernel_size)
+            blurred = cv2.GaussianBlur(img_array, (kernel_size, kernel_size), 0)
+            return Image.fromarray(blurred)
+        else:
+            # Use PIL for blur
+            from PIL import ImageFilter
+            kernel_size = params.get('blur_kernel', 1)
+            # Convert to PIL blur level (PIL uses radius instead of kernel size)
+            blur_radius = max(0.1, kernel_size / 4)
+            return image.filter(ImageFilter.GaussianBlur(radius=blur_radius))
     elif technique == "Noise Injection":
-        noise_factor = params.get('noise_factor', 0.0)
-        noise = np.random.normal(0, noise_factor, img_array.shape)
-        noisy_image = img_array + noise
-        return np.clip(noisy_image, 0, 255).astype(np.uint8)
+        if CV2_AVAILABLE:
+            img_array = np.array(image)
+            noise_factor = params.get('noise_factor', 0.0)
+            noise = np.random.normal(0, noise_factor, img_array.shape)
+            noisy_image = img_array + noise
+            noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
+            return Image.fromarray(noisy_image)
+        else:
+            # Use PIL for noise injection (simpler version)
+            img_array = np.array(image)
+            noise_factor = params.get('noise_factor', 0.0)
+            noise = np.random.normal(0, noise_factor, img_array.shape)
+            noisy_image = img_array + noise
+            noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
+            return Image.fromarray(noisy_image)
     
-    return img_array
+    return image
 
 def apply_cutout(image, size, random_position=True):
     """Apply Cutout augmentation to the image"""
@@ -192,7 +256,13 @@ def apply_copy_paste(background, source, patch_size, x_pos, y_pos):
     patch_w = int(w * patch_size)
     
     # Resize source patch to desired size
-    src_resized = cv2.resize(src_array, (patch_w, patch_h))
+    if CV2_AVAILABLE:
+        src_resized = cv2.resize(src_array, (patch_w, patch_h))
+    else:
+        # Use PIL to resize the source patch
+        src_img = Image.fromarray(src_array)
+        src_resized_img = src_img.resize((patch_w, patch_h), Image.Resampling.LANCZOS)
+        src_resized = np.array(src_resized_img)
     
     # Calculate paste position
     paste_y = min(max(y_pos, 0), h - patch_h)
