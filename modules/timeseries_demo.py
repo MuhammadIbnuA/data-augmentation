@@ -160,37 +160,6 @@ def show_timeseries_demo_page():
     st.info(f"**Penjelasan Teknik:** {explanations[technique]}")
     
     st.markdown("---")
-    st.subheader("Simulasi Audio Spectrogram")
-    
-    # Create a simple spectrogram-like visualization
-    st.write("Simulasi augmentasi pada spektrogram audio:")
-    
-    # Generate a simple spectrogram
-    freqs = np.linspace(0, 10, 100)
-    times = np.linspace(0, 5, 200)
-    spectrogram = np.zeros((len(freqs), len(times)))
-    
-    # Create some frequency patterns
-    for i, f in enumerate(freqs):
-        for j, t in enumerate(times):
-            # Create some patterns
-            val = np.sin(2 * np.pi * f * 0.1) * np.exp(-(t-2.5)**2/2)
-            spectrogram[i, j] = val
-    
-    # Add some noise for realism
-    spectrogram += np.random.normal(0, 0.1, spectrogram.shape)
-    
-    # Plot original spectrogram
-    fig, ax = plt.subplots(figsize=(10, 4))
-    im = ax.imshow(spectrogram, aspect='auto', origin='lower', 
-                   extent=[times.min(), times.max(), freqs.min(), freqs.max()])
-    ax.set_title('Original Spectrogram Simulation')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Frequency')
-    plt.colorbar(im, ax=ax)
-    st.pyplot(fig)
-    
-    # Add definitions for each augmentation technique
     st.subheader("Definisi Teknik Augmentation")
     
     st.write("**Jittering:** Menambahkan noise kecil ke sinyal. Membantu model menjadi lebih robust terhadap noise dan variansi kecil dalam data.")
